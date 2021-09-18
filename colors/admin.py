@@ -16,12 +16,12 @@ class AnalogColorAdmin(admin.ModelAdmin):
        'series',
        'tinting',
        'transparency',
-       'recipe_gloss',
-       'recipe_matte',
-       'recipe_medium',
-       'recipe_oil',
-       'recipe_thinner',
-       'recipe_water',
+       '_recipe_gloss',
+       '_recipe_matte',
+       '_recipe_medium',
+       '_recipe_oil',
+       '_recipe_thinner',
+       '_recipe_water',
     ]
 
 

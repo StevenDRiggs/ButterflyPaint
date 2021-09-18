@@ -24,6 +24,24 @@ class AnalogColor(models.Model):
         ('liquid_graphite', 'LIQUID GRAPHITE'),
     ]
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'body',
+                    'brandname',
+                    'glossiness',
+                    'lightfastness',
+                    'medium',
+                    'name',
+                    'series',
+                    'tinting',
+                    'transparency',
+                ],
+                name='unique_color',
+            )
+        ]
+
     body = models.CharField(max_length=50, choices=[('heavy', 'HEAVY'), ('medium', 'MEDIUM'), ('light', 'LIGHT')])
     brandname = models.CharField(max_length=200)
     glossiness = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)], default=100)
@@ -35,14 +53,14 @@ class AnalogColor(models.Model):
     tinting = models.IntegerField('tinting / pigmentation level', validators=[MinValueValidator(0), MaxValueValidator(100)])
     transparency = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)], default=0)
 
-    recipe_gloss = models.IntegerField(validators=[MinValueValidator(0)], default=0)
-    recipe_matte = models.IntegerField(validators=[MinValueValidator(0)], default=0)
-    recipe_medium = models.IntegerField(validators=[MinValueValidator(0)], default=0)
-    recipe_oil = models.IntegerField(validators=[MinValueValidator(0)], default=0)
-    recipe_thinner = models.IntegerField(validators=[MinValueValidator(0)], default=0)
-    recipe_water = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+    _recipe_gloss = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+    _recipe_matte = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+    _recipe_medium = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+    _recipe_oil = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+    _recipe_thinner = models.IntegerField(validators=[MinValueValidator(0)], default=0)
+    _recipe_water = models.IntegerField(validators=[MinValueValidator(0)], default=0)
 
-    recipe_colors = models.ManyToManyField(
+    _recipe_colors = models.ManyToManyField(
         'self',
         through='AnalogRecipe',
         related_name='used_in',
@@ -51,23 +69,40 @@ class AnalogColor(models.Model):
     def __repr__(self):
         return f"<AnalogColor '{self.name}' ({self.medium})>"
 
+    def __str__(self):
+        return f"{self.name} ({self.medium})"
+
     @property
     def recipe(self):
         full_recipe = {
-            'colors': self.recipe_colors,
+            'colors': [],
         }
 
-        recipe_ingredients = {
-            key_end.group(0): value for key, value in self.__dict__.items() if (key_end := re.search(r'(?<=recipe_)(.*)', key)) is not None and key_end != 'colors' and value > 0
+        color_ingredients = [
+            f'{color} x{quantity}' for color, quantity in zip(self._recipe_colors.all(), [ingredient.quantity for ingredient in AnalogRecipe.objects.filter(origin_color_id=self.id)])
+        ]
+
+        if len(color_ingredients) == 0:
+            color_ingredients = [f'{self} x1']
+
+        full_recipe['colors'] += color_ingredients
+
+        additional_ingredients = {
+            key_end.group(0): value for key, value in self.__dict__.items() if (key_end := re.search(r'(?<=_recipe_)(.*)', key)) is not None and key_end != 'colors' and value > 0
         }
 
-        full_recipe |= recipe_ingredients
+        full_recipe |= additional_ingredients
 
         return full_recipe
 
 
 
 class AnalogRecipe(models.Model):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['origin_color', 'ingredient'], name='unique_ingredients_for_each_color')
+        ]
+
     origin_color = models.ForeignKey(AnalogColor, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(AnalogColor, on_delete=models.CASCADE, related_name='ingredient')
     quantity = models.IntegerField(validators=[MinValueValidator(1)], default=1)
