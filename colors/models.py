@@ -73,6 +73,32 @@ class AnalogColor(models.Model):
         return f"{self.name} ({self.medium})"
 
     @property
+    def details(self):
+        print(f'''
+            {self.name}
+            -----------
+            image_url: {self.image_url}
+            medium: {self.medium.upper()}
+            body: {self.body.upper()}
+            
+            brandname: {self.brandname}
+            series: {self.series}
+            glossiness: {self.glossiness}
+            lightfastness: {self.lightfastness}
+            tinting: {self.tinting}
+            transparency: {self.transparency}
+
+            recipe:
+                colors: {self.recipe['colors']}
+                gloss: {self._recipe_gloss}
+                matte: {self._recipe_matte}
+                medium: {self._recipe_medium}
+                oil: {self._recipe_oil}
+                thinner: {self._recipe_thinner}
+                water: {self._recipe_water}
+            ''')
+
+    @property
     def recipe(self):
         full_recipe = {
             'colors': [],
@@ -95,6 +121,30 @@ class AnalogColor(models.Model):
 
         return full_recipe
 
+    @recipe.setter
+    def recipe(self, kwargs):
+        """
+            kwargs MUST include:
+                colors: [(AnalogColor:color, integer:quantity)],
+            kwargs MAY include:
+                gloss: integer(0...100),
+                matte: integer(0...100),
+                medium: integer(0...100),
+                oil: integer(0...100),
+                thinner: integer(0...100),
+                water: integer(0...100),
+        """
+
+        for color, quantity in kwargs.pop('colors'):
+            r = AnalogRecipe(origin_color=self, ingredient=color, quantity=quantity)
+            r.save()
+
+        for key, value in kwargs.items():
+            exec(f'self._recipe_{key} = {value}')
+
+        self.save()
+
+        return self.recipe
 
 
 class AnalogRecipe(models.Model):
@@ -106,3 +156,9 @@ class AnalogRecipe(models.Model):
     origin_color = models.ForeignKey(AnalogColor, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(AnalogColor, on_delete=models.CASCADE, related_name='ingredient')
     quantity = models.IntegerField(validators=[MinValueValidator(1)], default=1)
+
+    def __repr__(self):
+        return f'{AnalogColor.objects.get(pk=self.origin_color_id).name} x {AnalogColor.objects.get(pk=self.ingredient_id).name}'
+
+    def __str__(self):
+        return f'{AnalogColor.objects.get(pk=self.origin_color_id).name}: {AnalogColor.objects.get(pk=self.ingredient_id).name} x{self.quantity}'
