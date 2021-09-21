@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import AnalogColor
-from .models import AnalogRecipe
+from .models import AnalogColor, AnalogRecipe, DigitalColor
 
 
 class AnalogColorAdmin(admin.ModelAdmin):
@@ -13,9 +12,10 @@ class AnalogColorAdmin(admin.ModelAdmin):
        'brandname',
        'glossiness',
        'lightfastness',
+       'opaqueness',
        'series',
+       'thickness',
        'tinting',
-       'transparency',
        '_recipe_gloss',
        '_recipe_matte',
        '_recipe_medium',
@@ -27,3 +27,4 @@ class AnalogColorAdmin(admin.ModelAdmin):
 
 admin.site.register(AnalogColor, AnalogColorAdmin)
 admin.site.register(AnalogRecipe)
+admin.site.register(DigitalColor)
