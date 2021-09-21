@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'colors',
+    'inventory',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -78,6 +79,13 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'colors',
+    },
+    'inventory': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'inventory',
+        'TEST': {
+            'DEPENDENCIES': ['default']
+        },
     }
 }
 
