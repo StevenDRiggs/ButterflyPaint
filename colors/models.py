@@ -132,7 +132,7 @@ class AnalogColor(models.Model):
     def recipe(self, kwargs):
         """
             kwargs MUST include:
-                colors: [(AnalogColor:color, integer:quantity)],
+                colors: [(color: AnalogColor, quantity: integer)],
             kwargs MAY include:
                 gloss: integer(0...100),
                 matte: integer(0...100),
@@ -157,7 +157,13 @@ class AnalogColor(models.Model):
 class AnalogRecipe(models.Model):
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['origin_color', 'ingredient'], name='unique_ingredients_for_each_color')
+            models.UniqueConstraint(
+                fields=[
+                    'origin_color',
+                    'ingredient',
+                ],
+                name='unique_ingredients_for_each_color'
+            )
         ]
 
     origin_color = models.ForeignKey(AnalogColor, on_delete=models.CASCADE)
@@ -263,7 +269,7 @@ class DigitalColor(models.Model):
             if L <= 0.5:
                 s = (max_value - min_value) / (max_value + min_value)
             else:
-                s = (max_value - min_value) / (2.0 - max_value - min_value) 
+                s = (max_value - min_value) / (2.0 - max_value - min_value)
 
         if r == max_value:
             h = (g - b) / (max_value - min_value)
@@ -281,7 +287,7 @@ class DigitalColor(models.Model):
     @hsla.setter
     def hsla(self, args: tuple):
         """
-            args must be: (hue(degrees): int, saturation: str(with or without '%') or int or float, luminance: str(with or without '%') or int or float, alpha: float)
+            args must be: (hue(degrees): int, saturation: str(with or without '%') or integer(0..100) or float(0..1.0), luminance: str(with or without '%') or integer(0..100) or float(0..1.0), alpha: float(0..1.0)))
         """
 
         h, s, L, a = args
@@ -352,7 +358,7 @@ class DigitalColor(models.Model):
     @hsl.setter
     def hsl(self, args: tuple):
         """
-            args must be: (hue(degrees): int, saturation: str(with or without '%') or int or float, luminance: str(with or without '%') or int or float)
+            args must be: (hue(degrees): int, saturation: str(with or without '%') or int(0..100) or float(0..1.0), luminance: str(with or without '%') or int(0..100) or float(0..1.0))
         """
 
         h, s, L = args
@@ -384,7 +390,7 @@ class DigitalColor(models.Model):
     @cmyk.setter
     def cmyk(self, args: tuple):
         """
-            args must be (cyan, magenta, yellow, black) (all values: str(with or without '%') or int or float
+            args must be (cyan, magenta, yellow, black) (all values: str(with or without '%') or int(0..100) or float(0..1.0)
         """
 
         c, m, y, k = args
@@ -428,6 +434,7 @@ class DigitalColor(models.Model):
 
         if hex_value.startswith('0x'):
             hex_value = hex_value[2:]
+
         hex_length = len(hex_value)
 
         if hex_length == 3 or hex_length == 4:
@@ -444,7 +451,7 @@ class DigitalColor(models.Model):
         elif hex_length == 8:
             self._integer_value = int(float.fromhex(hex_value))
         else:
-            raise TypeError('hex value must be six or eight digits')
+            raise TypeError('hex value must be three, four, six or eight digits')
 
         self.save()
 
